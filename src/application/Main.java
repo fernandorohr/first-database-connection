@@ -26,5 +26,10 @@ public class Main {
         System.out.println("\n-------FIND ALL SELLERS-------");
         List<Seller> allSellers = sellerDao.findAll();
         allSellers.forEach(System.out::println);
+
+        System.out.println("\n-------INSERT A NEW SELLER-------");
+        Seller newSeller = new Seller(null, "Greg", "greg@gmail.com", new Date(), 3000.0, new Department(2, null));
+        sellerDao.insert(newSeller);
+        System.out.println("New seller ID: " + newSeller.getId());
     }
 }
