@@ -10,8 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.PrimitiveIterator;
+import java.util.*;
 
 public class SellerDaoJDBC implements SellerDao {
 
@@ -83,6 +82,51 @@ public class SellerDaoJDBC implements SellerDao {
             resultSet.getDouble("BaseSalary"),
             department
         );
+    }
+
+    @Override
+    public List<Seller> findByDepartment(Department department) {
+
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            preparedStatement = connection.prepareStatement(
+                    "SELECT seller.*, department.Name as DepName "
+                    + "FROM seller INNER JOIN department "
+                    + "ON seller.DepartmentId = department.Id "
+                    + "WHERE DepartmentId = ? "
+                    + "ORDER BY Name "
+//                    + "SELECT seller.*,department.Name as DepName "
+//                            + "FROM seller INNER JOIN department "
+//                            + "ON seller.DepartmentId = department.Id "
+//                            + "WHERE DepartmentId = ? "
+//                            + "ORDER BY Name"
+            );
+
+            preparedStatement.setInt(1, department.getId());
+            resultSet = preparedStatement.executeQuery();
+            List<Seller> sellers = new ArrayList<>();
+            Map<Integer, Department> map = new HashMap<>();
+
+            while (resultSet.next()) {
+                Department departmentMap = map.get(resultSet.getInt("DepartmentId"));
+
+                if (departmentMap == null) {
+                    departmentMap = instantiateDepartment(resultSet);
+                    map.put(resultSet.getInt("DepartmentId"), departmentMap);
+                }
+
+                sellers.add(instantiateSeller(resultSet, departmentMap));
+            }
+
+            return sellers;
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(preparedStatement);
+            DB.closeResultSet(resultSet);
+        }
     }
 
     @Override
