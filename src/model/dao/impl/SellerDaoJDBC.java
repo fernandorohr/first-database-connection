@@ -66,24 +66,6 @@ public class SellerDaoJDBC implements SellerDao {
         }
     }
 
-    private Department instantiateDepartment(ResultSet resultSet) throws SQLException {
-        return new Department(
-            resultSet.getInt("DepartmentId"),
-            resultSet.getString("DepName")
-        );
-    }
-
-    private Seller instantiateSeller(ResultSet resultSet, Department department) throws SQLException {
-        return new Seller(
-            resultSet.getInt("Id"),
-            resultSet.getString("Name"),
-            resultSet.getString("Email"),
-            resultSet.getDate("BirthDate"),
-            resultSet.getDouble("BaseSalary"),
-            department
-        );
-    }
-
     @Override
     public List<Seller> findByDepartment(Department department) {
 
@@ -97,11 +79,6 @@ public class SellerDaoJDBC implements SellerDao {
                     + "ON seller.DepartmentId = department.Id "
                     + "WHERE DepartmentId = ? "
                     + "ORDER BY Name "
-//                    + "SELECT seller.*,department.Name as DepName "
-//                            + "FROM seller INNER JOIN department "
-//                            + "ON seller.DepartmentId = department.Id "
-//                            + "WHERE DepartmentId = ? "
-//                            + "ORDER BY Name"
             );
 
             preparedStatement.setInt(1, department.getId());
@@ -110,12 +87,7 @@ public class SellerDaoJDBC implements SellerDao {
             Map<Integer, Department> map = new HashMap<>();
 
             while (resultSet.next()) {
-                Department departmentMap = map.get(resultSet.getInt("DepartmentId"));
-
-                if (departmentMap == null) {
-                    departmentMap = instantiateDepartment(resultSet);
-                    map.put(resultSet.getInt("DepartmentId"), departmentMap);
-                }
+                Department departmentMap = checkRepeatedDepartments(map, resultSet);
 
                 sellers.add(instantiateSeller(resultSet, departmentMap));
             }
@@ -131,6 +103,64 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public List<Seller> findAll() {
-        return null;
+
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+            preparedStatement = connection.prepareStatement(
+                    "SELECT seller.*, department.Name as DepName "
+                            + "FROM seller INNER JOIN department "
+                            + "ON seller.DepartmentId = department.Id "
+                            + "ORDER BY Name "
+            );
+
+            resultSet = preparedStatement.executeQuery();
+            List<Seller> sellers = new ArrayList<>();
+            Map<Integer, Department> map = new HashMap<>();
+
+            while (resultSet.next()) {
+                Department departmentMap = checkRepeatedDepartments(map, resultSet);
+
+                sellers.add(instantiateSeller(resultSet, departmentMap));
+            }
+
+            return sellers;
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        } finally {
+            DB.closeStatement(preparedStatement);
+            DB.closeResultSet(resultSet);
+        }
+    }
+
+    private Department checkRepeatedDepartments(Map<Integer, Department> map, ResultSet resultSet) throws SQLException {
+
+        Department department = map.get(resultSet.getInt("DepartmentId"));
+
+        if (department == null) {
+            department = instantiateDepartment(resultSet);
+            map.put(resultSet.getInt("DepartmentId"), department);
+        }
+
+        return department;
+    }
+
+    private Department instantiateDepartment(ResultSet resultSet) throws SQLException {
+        return new Department(
+                resultSet.getInt("DepartmentId"),
+                resultSet.getString("DepName")
+        );
+    }
+
+    private Seller instantiateSeller(ResultSet resultSet, Department department) throws SQLException {
+        return new Seller(
+                resultSet.getInt("Id"),
+                resultSet.getString("Name"),
+                resultSet.getString("Email"),
+                resultSet.getDate("BirthDate"),
+                resultSet.getDouble("BaseSalary"),
+                department
+        );
     }
 }
