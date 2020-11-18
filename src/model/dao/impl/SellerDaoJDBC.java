@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.PrimitiveIterator;
 
 public class SellerDaoJDBC implements SellerDao {
 
@@ -52,19 +53,8 @@ public class SellerDaoJDBC implements SellerDao {
             resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                Department department = new Department(
-                        resultSet.getInt("DepartmentId"),
-                        resultSet.getString("DepName")
-                );
-
-                Seller seller = new Seller(
-                        resultSet.getInt("Id"),
-                        resultSet.getString("Name"),
-                        resultSet.getString("Email"),
-                        resultSet.getDate("BirthDate"),
-                        resultSet.getDouble("BaseSalary"),
-                        department
-                );
+                Department department = instantiateDepartment(resultSet);
+                Seller seller = instantiateSeller(resultSet, department);
 
                 return seller;
             }
@@ -75,6 +65,24 @@ public class SellerDaoJDBC implements SellerDao {
             DB.closeStatement(preparedStatement);
             DB.closeResultSet(resultSet);
         }
+    }
+
+    private Department instantiateDepartment(ResultSet resultSet) throws SQLException {
+        return new Department(
+            resultSet.getInt("DepartmentId"),
+            resultSet.getString("DepName")
+        );
+    }
+
+    private Seller instantiateSeller(ResultSet resultSet, Department department) throws SQLException {
+        return new Seller(
+            resultSet.getInt("Id"),
+            resultSet.getString("Name"),
+            resultSet.getString("Email"),
+            resultSet.getDate("BirthDate"),
+            resultSet.getDouble("BaseSalary"),
+            department
+        );
     }
 
     @Override
