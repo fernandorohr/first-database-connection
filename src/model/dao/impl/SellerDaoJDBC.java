@@ -49,7 +49,7 @@ public class SellerDaoJDBC implements SellerDao {
 
                 DB.closeResultSet(resultSet);
             } else {
-                throw new DbException("Unexpected error! The update has failed");
+                throw new DbException("Unexpected error! The insertion has failed");
             }
         } catch (SQLException e) {
             throw new DbException(e.getMessage());

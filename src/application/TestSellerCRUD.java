@@ -9,7 +9,7 @@ import model.entities.Seller;
 import java.util.Date;
 import java.util.List;
 
-public class Main {
+public class TestSellerCRUD {
 
     public static void main(String[] args) {
 
